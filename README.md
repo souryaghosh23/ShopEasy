@@ -94,7 +94,7 @@ It supports complete user flows including authentication, product browsing, cart
 ## 🛠️ Tech Stack
 
 ### Backend
-
+* Python
 * Django
 * Django Authentication System
 * Django Messages Framework
