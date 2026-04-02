@@ -144,7 +144,7 @@ project/
 
 ```bash
 git clone https://github.com/souryaghosh23/ShopEasy.git
-cd shopeasy
+cd ShopEasy
 ```
 
 ### 2. Create Virtual Environment
