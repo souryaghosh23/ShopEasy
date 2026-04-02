@@ -30,6 +30,9 @@ SECRET_KEY = config("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config("DEBUG", cast=bool)
+
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1").split(",")
+
  
 
 # Application definition
@@ -179,12 +182,11 @@ STATICFILES_DIRS = [ BASE_DIR / "static" ]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Production safety
 if not DEBUG:
-    ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="127.0.0.1").split(",")
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = True
 
-    STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Session Security
 SESSION_COOKIE_HTTPONLY = True           # JS can't access cookie
