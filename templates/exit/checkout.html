@@ -1,0 +1,1077 @@
+<!doctype html>
+<html lang="en">
+  {% load static %}
+  <head>
+    <meta charset="UTF-8" />
+    <title>Checkout | ShopEase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <style>
+      :root {
+        --primary-color: #302551;
+      }
+      .accordion-content {
+        display: none;
+      }
+      .accordion.active .accordion-content {
+        display: block;
+      }
+      .accordion-arrow {
+        transition: transform 0.3s ease;
+      }
+      .accordion.active .accordion-arrow {
+        transform: rotate(180deg);
+      }
+      .payment-option {
+        border: 2px solid #e5e7eb;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      .payment-option:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(48, 37, 81, 0.2);
+      }
+      .payment-option input[type="radio"] {
+        accent-color: var(--primary-color);
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 font-sans">
+    <!-- ✅ HEADER -->
+    <header class="bg-[color:var(--primary-color)] shadow-lg py-4">
+      {% if messages %} {% for message in messages %}
+      <div
+        id="flashMessage"
+        class="fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded shadow-lg text-white text-sm font-semibold z-50 transition-all duration-500 backdrop-blur-md bg-opacity-80"
+        style="background-color:
+        {% if message.tags == 'success' %}#16a34a
+        {% elif message.tags == 'error' %}#dc2626
+        {% elif message.tags == 'warning' %}#f59e0b
+        {% else %}#2563eb
+        {% endif %};"
+      >
+        {{ message }}
+      </div>
+
+      <script>
+        setTimeout(() => {
+          const msg = document.getElementById("flashMessage");
+          if (msg) msg.style.opacity = "0";
+        }, 4000);
+      </script>
+      {% endfor %} {% endif %}
+
+      <div
+        class="max-w-screen-xl mx-auto px-4 flex items-center justify-between space-x-6"
+      >
+        <div class="text-white text-2xl font-extrabold tracking-wide">
+          <a href="{% url 'Home' %}">ShopEasy</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- ✅ MAIN CHECKOUT -->
+    <main
+      class="max-w-screen-xl mx-auto px-4 py-10 grid grid-cols-1 md:grid-cols-3 gap-8"
+    >
+      <!-- LEFT SECTION -->
+      <div class="md:col-span-2 bg-white p-6 rounded shadow space-y-4">
+        <!-- Accordion 1: Login -->
+        {% if not request.user.is_authenticated %}
+        <div class="accordion border rounded">
+          <div
+            onclick="toggleAccordion(this)"
+            class="cursor-pointer px-4 py-3 bg-gray-100 font-semibold text-[color:var(--primary-color)] flex justify-between items-center"
+          >
+            <span>1. Login or Signup</span>
+            <svg
+              class="accordion-arrow w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+
+          <div class="accordion-content px-6 py-6 space-y-4">
+            <!-- Login Form -->
+            <form method="POST" action="{% url 'checkout_login' %}">
+              {% csrf_token %}
+              <input
+                type="text"
+                name="user_id"
+                placeholder="Email"
+                class="w-full mb-3 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)]"
+              />
+              <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                class="w-full mb-4 px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)]"
+              />
+
+              {% csrf_token %}
+              <button
+                type="submit"
+                class="w-full border-2 border-[color:var(--primary-color)] text-[color:var(--primary-color)] py-2 rounded font-semibold hover:bg-[color:var(--primary-color)] hover:text-white transition"
+              >
+                Login/Signup
+              </button>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Accordion 2: Address -->
+        <div class="accordion border rounded relative">
+          <div
+            onclick="toggleAccordion(this)"
+            class="cursor-pointer px-4 py-3 bg-gray-100 font-semibold text-[color:var(--primary-color)] flex justify-between items-center"
+          >
+            <div class="flex flex-col">
+              <span>2. Delivery Address</span>
+              <span
+                id="selectedAddressPreview"
+                class="text-xs text-gray-600 font-normal"
+              ></span>
+            </div>
+
+            <svg
+              class="accordion-arrow w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+          <div class="accordion-content px-4 py-3 space-y-2 relative">
+            <button
+              class="bg-[color:var(--primary-color)] text-white text-sm px-4 py-2 rounded hover:brightness-110 mb-3"
+              onclick="openAddressModal()"
+            >
+              + New Address
+            </button>
+            <button
+              id="scrollLeft"
+              onclick="scrollAddresses('left')"
+              class="absolute left-0 top-[60%] -translate-y-[40%] bg-white border border-gray-300 hover:bg-gray-100 text-[color:var(--primary-color)] p-0.5 rounded-full shadow-md transition z-10"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+            <button
+              id="scrollRight"
+              onclick="scrollAddresses('right')"
+              class="absolute right-0 top-[60%] -translate-y-[40%] bg-white border border-gray-300 hover:bg-gray-100 text-[color:var(--primary-color)] p-0.5 rounded-full shadow-md transition z-10"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-3.5 h-3.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </button>
+            <div
+              id="addressScroll"
+              class="flex space-x-4 overflow-x-auto py-2 px-2 scroll-smooth no-scrollbar"
+            >
+              {% for address in addresses %}
+              <div
+                class="min-w-[220px] border p-4 rounded bg-white shadow-sm cursor-pointer hover:shadow-md relative"
+                data-address-id="{{ address.id }}"
+              >
+                <div
+                  class="text-sm font-semibold text-[color:var(--primary-color)] mb-1"
+                >
+                  {{ address.name }}
+                </div>
+                <div class="text-xs text-gray-600">
+                  {{ address.house_no_or_street }}
+                </div>
+                <div class="text-xs text-gray-500 mt-1">
+                  {{ address.city }}, {{ address.state }} - {{ address.pincode}}
+                </div>
+                {% if address.is_default %}
+                <div class="text-green-600 text-xs font-medium mt-1">
+                  Default Address
+                </div>
+                {% endif %}
+                <div class="space-y-2 mt-3">
+                  <!-- Edit/Delete Row -->
+                  <div class="flex items-center justify-between">
+                    <button
+                      class="text-xs text-blue-600 hover:underline font-medium edit-address-btn"
+                      data-id="{{ address.id }}"
+                    >
+                      Edit
+                    </button>
+                    <form
+                      action="{% url 'DeleteAddress' address.id %}"
+                      method="POST"
+                      class="inline-flex"
+                    >
+                      {% csrf_token %}
+                      <button
+                        type="submit"
+                        class="text-xs text-red-600 hover:underline font-medium"
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </div>
+
+                  <!-- Deliver Button -->
+                  <button
+                    type="button"
+                    class="w-full bg-[color:var(--primary-color)] text-white text-sm py-2 rounded-md shadow hover:brightness-110 transition select-address-btn"
+                    onclick="selectAddress('{{ address.id }}', `{{ address.name }}, {{ address.house_no_or_street }}, {{ address.city }} - {{ address.pincode }}`)"
+                  >
+                    Deliver to this Address
+                  </button>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordion 3: Order Summary -->
+        <div class="accordion border rounded" id="orderSummaryAccordion">
+          <div
+            onclick="toggleAccordion(this)"
+            class="cursor-pointer px-4 py-3 bg-gray-100 font-semibold text-[color:var(--primary-color)] flex justify-between items-center accordion-header"
+          >
+            <span>3. Order Summary</span>
+            <svg
+              class="accordion-arrow w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+
+          <div class="accordion-content px-4 py-4 space-y-4">
+            {% for item in order_items %}
+            <div
+              class="flex items-center border rounded p-3 shadow-sm relative"
+              data-item-id="{{ item.product_id.id }}"
+            >
+              <input
+                type="checkbox"
+                class="item-checkbox mr-4 accent-[color:var(--primary-color)]"
+                data-item-id="{{ item.id }}"
+                onclick="toggleAccordion(this)"
+                {%if item.selected %}checked{%endif%}
+              />
+
+              <img
+                src="{{ item.product_image.url }}"
+                alt="{{ item.product_name }}"
+                class="w-16 h-16 object-cover rounded mr-4"
+              />
+              <div class="flex-1">
+                <div class="text-sm font-semibold text-gray-800">
+                  {{ item.product_name }}
+                </div>
+                <div class="flex items-center space-x-3 mt-1">
+                  <button
+                    class="px-2 py-0.5 bg-gray-200 rounded text-sm"
+                    onclick="updateCart('{{ item.product_id.id }}', 'decrease', this)"
+                  >
+                    -
+                  </button>
+                  <span class="text-sm font-medium">{{ item.quantity }}</span>
+                  <button
+                    class="px-2 py-0.5 bg-gray-200 rounded text-sm"
+                    onclick="updateCart('{{ item.product_id.id }}', 'increase', this)"
+                  >
+                    +
+                  </button>
+                </div>
+                <div
+                  class="item-message text-xs text-green-700 mt-2 hidden"
+                ></div>
+              </div>
+              <div
+                class="text-sm font-semibold text-gray-800 ml-4 product-subtotal"
+                data-subtotal-id="{{ item.product_id.id }}"
+              >
+                ₹{{ item.sub_total }}
+              </div>
+            </div>
+            {% endfor %}
+            <div class="mt-4">
+              <button
+                onclick="goToPaymentAccordion()"
+                class="bg-[color:var(--primary-color)] text-white px-6 py-2 rounded hover:brightness-110 text-sm font-semibold"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Accordion 4: Payment Options -->
+        <div class="accordion border rounded" id="paymentAccordion">
+          <div
+            id="paymentAccordionHeader"
+            class="accordion-header px-4 py-3 bg-gray-100 font-semibold text-[color:var(--primary-color)] flex justify-between items-center select-none"
+            onclick="toggleAccordion(this)"
+            style="cursor: not-allowed; pointer-events: none"
+          >
+            <span>4. Payment Options</span>
+            <svg
+              class="accordion-arrow w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+          <div class="accordion-content px-4 py-4 space-y-4">
+            <label
+              class="payment-option flex items-center gap-3 cursor-pointer"
+            >
+              <input
+                type="radio"
+                name="payment"
+                value="cod"
+                class="w-5 h-5"
+                checked
+              />
+              <img
+                src="https://cdn-icons-png.flaticon.com/128/10415/10415267.png"
+                class="w-6 h-6"
+              />
+              <span class="text-sm font-medium text-gray-800"
+                >Cash on Delivery</span
+              >
+            </label>
+
+            <label
+              class="payment-option flex items-center gap-3 cursor-pointer"
+            >
+              <input type="radio" name="payment" value="upi" class="w-5 h-5" />
+              <img src="{% static 'images/upi-icon.png' %}" class="w-9 h-9" />
+              <span class="text-sm font-medium text-gray-800"
+                >UPI / Google Pay / PhonePe</span
+              >
+            </label>
+
+            <label
+              class="payment-option flex items-center gap-3 cursor-pointer"
+            >
+              <input type="radio" name="payment" value="card" class="w-5 h-5" />
+              <img
+                src="https://cdn-icons-png.flaticon.com/128/633/633611.png"
+                class="w-6 h-6"
+              />
+              <span class="text-sm font-medium text-gray-800"
+                >Credit / Debit Card</span
+              >
+            </label>
+
+            <label
+              class="payment-option flex items-center gap-3 cursor-pointer"
+            >
+              <input
+                type="radio"
+                name="payment"
+                value="razorpay"
+                class="w-5 h-5"
+              />
+              <img
+                src="{% static 'images/Razorpay--Streamline-Simple-Icons.png' %}"
+                class="w-6 h-6"
+              />
+              <span class="text-sm font-medium text-gray-800">Razorpay</span>
+            </label>
+
+            <button
+              id="payBtn"
+              class="w-full bg-indigo-600 hover:brightness-110 text-white px-6 py-2 rounded font-semibold mt-4 hidden"
+            >
+              Pay with Razorpay
+            </button>
+
+            <!-- Place Order Button -->
+            <div class="mt-8">
+              <button
+                id="placeOrderBtn"
+                class="w-full bg-indigo-600 text-white py-2 rounded-full text-sm font-semibold tracking-wide shadow hover:shadow-md hover:bg-indigo-700 transition duration-200 ease-in-out"
+              >
+                Place Order
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Order Summary -->
+      <div id="rightTotalBox" class="bg-white p-6 rounded shadow">
+        <h2 class="text-lg font-bold text-[color:var(--primary-color)] mb-4">
+          Order Summary
+        </h2>
+        {% for item in order_items %}
+        <div
+          class="flex items-center justify-between py-2 border-b"
+          data-summary-id="{{ item.product_id.id }}"
+        >
+          <div>
+            <div class="text-sm font-semibold text-gray-800">
+              {{ item.product_name }}
+            </div>
+            <div class="text-xs text-gray-500 summary-qty">
+              Qty: {{ item.quantity }}
+            </div>
+          </div>
+          <div class="text-sm font-medium text-gray-800 summary-subtotal">
+            ₹{{ item.sub_total }}
+          </div>
+        </div>
+        {% endfor %}
+        <div
+          class="pt-4 border-t mt-4 text-right text-lg font-bold text-gray-800"
+        >
+          Total: ₹{{ total_amount }}
+        </div>
+      </div>
+
+      <!-- Hidden input to store latest value -->
+      <input type="hidden" id="totalAmount" value="{{ total_amount }}" />
+    </main>
+    <!-- ✅ Address Modal -->
+    <div
+      id="addressModal"
+      class="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm z-50 hidden flex items-center justify-center"
+    >
+      <div class="bg-white w-full max-w-lg rounded-lg shadow-xl p-6 relative">
+        <!-- Close Button -->
+        <button
+          onclick="closeAddressModal()"
+          class="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 011.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+
+        <!-- Form -->
+        <h2
+          class="text-xl font-semibold text-[color:var(--primary-color)] mb-4"
+        >
+          Add New Address
+        </h2>
+        <form
+          id="newAddressForm"
+          method="POST"
+          action="{% url 'Address' %}"
+          class="space-y-4"
+        >
+          {% csrf_token %}
+          <input
+            type="text"
+            name="name"
+            placeholder="Reciver's Name"
+            maxlength="20"
+            class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)]"
+            required
+          />
+          <input
+            type="text"
+            name="phone_number"
+            maxlength="12"
+            placeholder="Phone Number (e.g. +91XXXXXXXXXX)"
+            class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)]"
+            required
+          />
+          <input
+            type="text"
+            name="pincode"
+            placeholder="Pincode"
+            maxlength="6"
+            pattern="\d{6}"
+            title="Enter 6-digit PIN code"
+            class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)]"
+            required
+          />
+          <input
+            type="text"
+            name="state"
+            placeholder="State"
+            maxlength="20"
+            class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)]"
+            required
+          />
+          <input
+            type="text"
+            name="city"
+            placeholder="City"
+            maxlength="20"
+            class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)]"
+            required
+          />
+          <input
+            type="text"
+            name="house_no_or_street"
+            placeholder="House No. / Street"
+            maxlength="500"
+            class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)]"
+            required
+          />
+          <input
+            type="text"
+            name="landmark"
+            placeholder="Landmark (Optional)"
+            maxlength="500"
+            class="w-full border px-4 py-2 rounded focus:outline-none focus:ring-2 focus:ring-[color:var(--primary-color)]"
+          />
+
+          <!-- Default toggle -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Set as default address:
+            </label>
+            <div class="flex items-center gap-6">
+              <label class="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="is_default"
+                  value="True"
+                  class="accent-[color:var(--primary-color)]"
+                />
+                Yes
+              </label>
+              <label class="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="is_default"
+                  value="False"
+                  checked
+                  class="accent-[color:var(--primary-color)]"
+                />
+                No
+              </label>
+            </div>
+          </div>
+
+          <div class="pt-4">
+            <button
+              type="submit"
+              class="w-full bg-[color:var(--primary-color)] hover:brightness-110 text-white py-2 px-6 rounded font-semibold text-sm shadow"
+            >
+              Save and Deliver Here
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ✅ SCRIPT -->
+    <script>
+      let paymentAccordionUnlocked = false;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        const openAccordionId = localStorage.getItem("accordionOpenId");
+
+        if (openAccordionId) {
+          const accordion = document.getElementById(openAccordionId);
+          if (accordion) {
+            accordion.classList.add("active", "force-open");
+            const header = accordion.querySelector(".accordion-header");
+            if (header) {
+              header.style.pointerEvents = "auto";
+              header.style.cursor = "pointer";
+            }
+          }
+          localStorage.removeItem("accordionOpenId");
+        }
+
+        // Attach click listeners to all edit buttons
+        document.querySelectorAll(".edit-address-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const addressId = this.dataset.id;
+            console.log("Edit button clicked!", addressId); // ✅ Now it works
+
+            fetch(`/edit_address/${addressId}`)
+              .then((res) => res.json())
+              .then((data) => {
+                if (data.status === "success") {
+                  const form = document.getElementById("newAddressForm");
+                  form.action = `/edit_address/${addressId}/`; // ✅ underscore instead of hyphen
+                  form.querySelector('input[name="name"]').value =
+                    data.data.name || "";
+                  form.querySelector('input[name="phone_number"]').value =
+                    data.data.phone_number || "";
+                  form.querySelector('input[name="pincode"]').value =
+                    data.data.pincode || "";
+                  form.querySelector('input[name="state"]').value =
+                    data.data.state || "";
+                  form.querySelector('input[name="city"]').value =
+                    data.data.city || "";
+                  form.querySelector('input[name="house_no_or_street"]').value =
+                    data.data.house_no_or_street || "";
+                  form.querySelector('input[name="landmark"]').value =
+                    data.data.landmark || "";
+
+                  const defaultRadios = form.querySelectorAll(
+                    'input[name="is_default"]',
+                  );
+                  defaultRadios.forEach((radio) => {
+                    radio.checked =
+                      radio.value === String(data.data.is_default);
+                  });
+
+                  document.querySelector("#addressModal h2").innerText =
+                    "Edit Address";
+                  form.querySelector("button[type='submit']").innerText =
+                    "Save";
+
+                  openAddressModal();
+                }
+              });
+          });
+        });
+      });
+
+      document.querySelectorAll(".item-checkbox").forEach((checkbox) => {
+        checkbox.addEventListener("change", function () {
+          const itemId = this.dataset.itemId;
+          const selected = this.checked;
+
+          const formData = new URLSearchParams();
+          formData.append("item_id", itemId);
+          formData.append("selected", selected ? "True" : "False");
+
+          fetch("{% url 'Uncheck_Items' %}", {
+            method: "POST",
+            headers: {
+              "X-CSRFToken": "{{ csrf_token }}",
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: formData,
+          }).then(() => {
+            // ✅ Force full reload to recalculate totals
+            localStorage.setItem("accordionOpenId", "orderSummaryAccordion");
+            window.location.href = "{% url 'Checkout_View' %}";
+          });
+        });
+      });
+
+      function openAddressModal() {
+        document.getElementById("addressModal").classList.remove("hidden");
+      }
+      function closeAddressModal() {
+        document.getElementById("addressModal").classList.add("hidden");
+      }
+
+      // Open/close modal
+      document.querySelectorAll("button").forEach((btn) => {
+        if (btn.textContent.trim() === "+ New Address") {
+          console.log("New address button clicked!");
+          btn.addEventListener("click", (e) => {
+            // Reset the form for new entry
+            const form = document.getElementById("newAddressForm");
+            form.reset();
+            form.action = "{% url 'Address' %}"; // Replace with actual new address URL
+            form.querySelector("button[type='submit']").innerText =
+              "Save and Deliver Here";
+            document.querySelector("#addressModal h2").innerText =
+              "Add New Address";
+
+            // Show the modal
+            openAddressModal();
+          });
+        }
+      });
+
+      function closeAddressModal() {
+        document.getElementById("addressModal").classList.add("hidden");
+      }
+
+      // Optional: Handle form submit (you'll handle POST via JS or backend)
+      document
+        .getElementById("newAddressForm")
+        .addEventListener("submit", function (e) {
+          //e.preventDefault();
+          const formData = new FormData(this);
+          // TODO: AJAX or normal form submit to backend
+          console.log("Submit Address Data:", Object.fromEntries(formData));
+        });
+
+      function goToPaymentAccordion() {
+        document.querySelectorAll(".accordion").forEach((acc) => {
+          acc.classList.remove("active");
+        });
+
+        const paymentAccordion = document.getElementById("paymentAccordion");
+        const paymentHeader = document.getElementById("paymentAccordionHeader");
+
+        paymentAccordion.classList.add("active");
+
+        // ✅ Unlock manual toggle only after "Next"
+        paymentAccordionUnlocked = true;
+        paymentHeader.style.pointerEvents = "auto";
+        paymentHeader.style.cursor = "pointer";
+
+        paymentAccordion.scrollIntoView({ behavior: "smooth", block: "start" });
+
+        recalculateTotal();
+        document.getElementById("totalAmount").value = calculateCurrentTotal();
+      }
+
+      // Utility function to calculate latest total (number only)
+      function calculateCurrentTotal() {
+        let total = 0;
+        document.querySelectorAll(".summary-subtotal").forEach((el) => {
+          const amt = parseFloat(el.innerText.replace(/[₹,]/g, ""));
+          if (!isNaN(amt)) total += amt;
+        });
+        return total;
+      }
+
+      function toggleAccordion(el) {
+        const acc = el.parentElement;
+
+        // 🚫 Only allow manual open if it's NOT payment accordion, or if it's unlocked
+        if (acc.id === "paymentAccordion" && !paymentAccordionUnlocked) {
+          return;
+        }
+
+        acc.classList.toggle("active");
+
+        if (acc.querySelector("#addressScroll")) {
+          setTimeout(updateArrowVisibility, 200);
+        }
+      }
+
+      function scrollAddresses(direction) {
+        const container = document.getElementById("addressScroll");
+        const amount = 240;
+        container.scrollBy({
+          left: direction === "left" ? -amount : amount,
+          behavior: "smooth",
+        });
+      }
+
+      let selectedAddressId = null;
+
+      function selectAddress(addressId, addressText) {
+        selectedAddressId = addressId;
+
+        // Show the selected address next to header
+        document.getElementById("selectedAddressPreview").innerText =
+          addressText;
+
+        // Optional: Visually highlight the selected address card
+        document.querySelectorAll("[data-address-id]").forEach((card) => {
+          card.classList.remove("ring-2", "ring-[color:var(--primary-color)]");
+        });
+        const selectedCard = document.querySelector(
+          `[data-address-id='${addressId}']`,
+        );
+        if (selectedCard) {
+          selectedCard.classList.add(
+            "ring-2",
+            "ring-[color:var(--primary-color)]",
+          );
+        }
+      }
+
+      function updateCart(productId, action, btn) {
+        fetch("{% url 'Checkout_Quantity_Update' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": "{{ csrf_token }}",
+          },
+          body: `product_id=${productId}&action=${action}`,
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            const itemBox = document.querySelector(
+              `[data-item-id='${productId}']`,
+            );
+            const summaryRow = document.querySelector(
+              `[data-summary-id='${productId}']`,
+            );
+
+            if (data.status === "ok") {
+              if (data.deleted) {
+                if (itemBox) itemBox.remove();
+                if (summaryRow) summaryRow.remove();
+                showRemovalMessageAndRedirect();
+              } else {
+                btn.parentElement.querySelector("span").innerText =
+                  data.quantity;
+
+                const leftSubtotal = document.querySelector(
+                  `.product-subtotal[data-subtotal-id='${productId}']`,
+                );
+                if (leftSubtotal) leftSubtotal.innerText = `₹${data.subtotal}`;
+
+                if (summaryRow) {
+                  summaryRow.querySelector(".summary-qty").innerText =
+                    `Qty: ${data.quantity}`;
+                  summaryRow.querySelector(".summary-subtotal").innerText =
+                    `₹${data.subtotal}`;
+                }
+              }
+
+              recalculateTotal();
+            }
+          });
+      }
+
+      function showRemovalMessageAndRedirect() {
+        const main = document.querySelector("main");
+        main.innerHTML = `
+            <div class="flex flex-col items-center justify-center text-center p-10 bg-white rounded shadow col-span-3">
+              <h1 class="text-xl font-bold text-green-600 mb-2">Item removed successfully</h1>
+              <p class="text-sm text-gray-600">Redirecting you shortly...</p>
+            </div>
+          `;
+        setTimeout(() => {
+          window.location.href = "{% url 'Products' %}";
+        }, 2000);
+      }
+
+      function recalculateTotal() {
+        let total = 0;
+        document.querySelectorAll(".summary-subtotal").forEach((el) => {
+          const amt = parseFloat(el.innerText.replace(/[₹,]/g, ""));
+          if (!isNaN(amt)) total += amt;
+        });
+        const totalElem = document.querySelector(
+          ".text-right.text-lg.font-bold.text-gray-800",
+        );
+        if (totalElem) totalElem.innerText = `Total: ₹${total}`;
+        handleEmptyOrderState();
+      }
+
+      function updateArrowVisibility() {
+        const scrollContainer = document.getElementById("addressScroll");
+        const scrollLeft = scrollContainer.scrollLeft;
+        const scrollWidth = scrollContainer.scrollWidth;
+        const clientWidth = scrollContainer.clientWidth;
+        document.getElementById("scrollLeft").style.display =
+          scrollLeft > 0 ? "flex" : "none";
+        document.getElementById("scrollRight").style.display =
+          scrollLeft + clientWidth < scrollWidth ? "flex" : "none";
+      }
+
+      // Handle address arrows
+      const scrollContainer = document.getElementById("addressScroll");
+      if (scrollContainer) {
+        scrollContainer.addEventListener("scroll", updateArrowVisibility);
+        updateArrowVisibility();
+      }
+
+      // Handle payment click
+      const payBtn = document.getElementById("placeOrderBtn");
+      let totalAmount = 0;
+      document.querySelectorAll(".summary-subtotal").forEach((el) => {
+        const amt = parseFloat(el.innerText.replace(/[₹,]/g, ""));
+        if (!isNaN(amt)) totalAmount += amt;
+      });
+
+      payBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        const selectedPayment = document.querySelector(
+          'input[name="payment"]:checked',
+        )?.value;
+
+        if (!selectedPayment) {
+          alert("Please select a payment method.");
+          return;
+        }
+
+        // ✅ Always recalculate total at the moment of clicking "Pay"
+        const updatedTotal = calculateCurrentTotal();
+        document.getElementById("totalAmount").value = updatedTotal;
+
+        if (selectedPayment === "razorpay") {
+          fetch("{% url 'Make_Payment' %}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: new URLSearchParams({ total_amount: updatedTotal }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.status === "success") {
+                const options = {
+                  key: data.razorpay_key_id,
+                  amount: data.amount,
+                  currency: "INR",
+                  name: "ShopEase",
+                  description: "Order Payment",
+                  order_id: data.razorpay_order_id,
+                  handler: function (response) {
+                    fetch("{% url 'Checkout_View' %}", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": "{{ csrf_token }}",
+                      },
+                      body: new URLSearchParams({
+                        payment_method: "razorpay",
+                        address_id: selectedAddressId, // capture this in your JS
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature,
+                      }),
+                    }).then((res) => {
+                      if (res.redirected) {
+                        window.location.href = res.url; // ✅ Follow redirect
+                      } else {
+                        return res.text().then((html) => {
+                          document.open();
+                          document.write(html);
+                          document.close();
+                        });
+                      }
+                    });
+                  },
+
+                  prefill: {
+                    name: "Customer Name",
+                    email: "customer@example.com",
+                    contact: "9000000000",
+                  },
+                  theme: {
+                    color: "#302551",
+                  },
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+              } else {
+                alert("Payment initialization failed.");
+              }
+            });
+        } else {
+          // COD — Send straight to Checkout_View
+          fetch("{% url 'Checkout_View' %}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-CSRFToken": "{{ csrf_token }}",
+            },
+            body: new URLSearchParams({
+              payment_method: "cod",
+              address_id: selectedAddressId,
+            }),
+          }).then((res) => {
+            if (res.redirected) {
+              window.location.href = res.url;
+            } else {
+              res.text().then((html) => {
+                document.open();
+                document.write(html);
+                document.close();
+              });
+            }
+          });
+        }
+      });
+
+      function handleEmptyOrderState() {
+        const selectedCheckboxes = document.querySelectorAll(
+          ".item-checkbox:checked",
+        );
+        const paymentAccordion = document.getElementById("paymentAccordion");
+        const rightTotalBox = document.getElementById("rightTotalBox");
+        const messageId = "noItemsMessage";
+
+        // Remove existing message if any
+        const oldMsg = document.getElementById(messageId);
+        if (oldMsg) oldMsg.remove();
+
+        if (selectedCheckboxes.length === 0) {
+          // No items selected → show warning, hide payment + summary
+          if (paymentAccordion) paymentAccordion.classList.add("hidden");
+          if (rightTotalBox) rightTotalBox.classList.add("hidden");
+
+          const msgBox = document.createElement("div");
+          msgBox.id = messageId;
+          msgBox.className =
+            "bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded text-sm mt-4";
+          msgBox.innerHTML = `<strong>⚠️ Please select at least one product to proceed.</strong>`;
+
+          const orderSummaryAccordion = document.querySelector(
+            "#orderSummaryAccordion .accordion-content",
+          );
+          if (orderSummaryAccordion) orderSummaryAccordion.appendChild(msgBox);
+        } else {
+          // At least one item selected → show everything
+          if (paymentAccordion) paymentAccordion.classList.remove("hidden");
+          if (rightTotalBox) rightTotalBox.classList.remove("hidden");
+        }
+      }
+
+      function initCheckoutPage() {
+        handleEmptyOrderState(); // call once on load
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        initCheckoutPage();
+
+        // Also re-check every time checkbox is toggled
+        document.querySelectorAll(".item-checkbox").forEach((checkbox) => {
+          checkbox.addEventListener("change", handleEmptyOrderState);
+        });
+      });
+    </script>
+  </body>
+</html>

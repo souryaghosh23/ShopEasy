@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      .orders-page {
+        display: flex;
+        gap: 20px;
+        padding: 20px;
+        background: #f1f3f6;
+        min-height: 100vh;
+      }
+
+      /* Sidebar */
+      .filters {
+        width: 240px;
+        background: #fff;
+        padding: 16px;
+        border-radius: 6px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .filters h3 {
+        margin-bottom: 16px;
+      }
+
+      .filter-group {
+        margin-bottom: 20px;
+      }
+
+      .filter-group h4 {
+        font-size: 12px;
+        letter-spacing: 0.05em;
+        color: #6b7280; /* Tailwind gray-500 */
+        font-weight: 600;
+      }
+
+      .filter-group label {
+        display: block;
+        font-size: 14px;
+        margin-bottom: 6px;
+        cursor: pointer;
+      }
+
+      /* Main Content */
+      .orders-content {
+        flex: 1;
+      }
+
+      /* Search bar */
+      .order-search {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .order-status .dot-green {
+        background: #16a34a; /* Tailwind green-600 */
+      }
+
+      .order-status .dot-yellow {
+        background: #eab308; /* Tailwind yellow-500 */
+      }
+      .order-status strong {
+        font-weight: 600;
+        color: #111827;
+      }
+
+      .order-search input {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid #ccc;
+      }
+
+      .order-search button {
+        padding: 10px 16px;
+        background: #302551;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        border-radius: 4px;
+      }
+
+      /* Order Card */
+      .order-card {
+        background: #fff;
+        padding: 16px;
+        border-radius: 6px;
+        margin-bottom: 14px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+
+      .order-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .order-left img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border: 1px solid #ddd;
+      }
+
+      .sub {
+        font-size: 13px;
+        color: #777;
+      }
+
+      .order-price {
+        font-weight: bold;
+      }
+
+      .order-status {
+        text-align: right;
+        font-size: 14px;
+      }
+
+      .order-status .dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #26a541;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+
+      .order-status .dot-purple {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #7426a5;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+
+      .review {
+        display: block;
+        color: #2874f0;
+        margin-top: 4px;
+        text-decoration: none;
+      }
+      /* ===== CLEAN NAVBAR ===== */
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          "Helvetica Neue",
+          Arial,
+          "Noto Sans",
+          sans-serif;
+      }
+
+      h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #111827;
+      }
+
+      h4 {
+        font-weight: 600;
+      }
+
+      .modern-dropdown button:hover {
+        background: #f3f4f6;
+      }
+
+      .modern-navbar {
+        background-color: #302551;
+        padding: 0;
+      }
+
+      .modern-nav-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .modern-logo {
+        color: white;
+        font-size: 24px; /* text-2xl */
+        font-weight: 800; /* font-extrabold */
+        letter-spacing: 0.05em; /* tracking-wide */
+        text-decoration: none;
+      }
+
+      /* Hover support */
+      .modern-user:hover .modern-dropdown {
+        display: block;
+      }
+
+      .modern-user {
+        position: relative;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+      }
+
+      .modern-user img {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+      }
+
+      .modern-dropdown {
+        position: absolute;
+        top: 60px;
+        right: 0;
+        background: white;
+        color: #333;
+        border-radius: 6px;
+        width: 150px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-5px);
+        transition: all 0.2s ease;
+      }
+
+      .modern-user:hover .modern-dropdown,
+      .modern-dropdown.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .modern-dropdown button {
+        width: 100%;
+        padding: 10px 16px;
+        background: none;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="modern-navbar">
+      {% if messages %} {% for message in messages %}
+      <div
+        id="flashMessage"
+        class="fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded shadow-lg text-white text-sm font-semibold z-50 transition-all duration-500 backdrop-blur-md bg-opacity-80"
+        style="background-color:
+        {% if message.tags == 'success' %}#16a34a
+        {% elif message.tags == 'error' %}#dc2626
+        {% elif message.tags == 'warning' %}#f59e0b
+        {% else %}#2563eb
+        {% endif %};"
+      >
+        {{ message }}
+      </div>
+
+      <script>
+        setTimeout(() => {
+          const msg = document.getElementById("flashMessage");
+          if (msg) msg.style.opacity = "0";
+        }, 4000);
+      </script>
+      {% endfor %} {% endif %}
+      <div class="modern-nav-inner">
+        <a href="{% url 'Home' %}" class="modern-logo"> ShopEasy </a>
+
+        {% if user.is_authenticated %}
+        <div class="modern-user" id="profileTrigger">
+          <img
+            src="https://img.icons8.com/?size=100&id=AZazdsitsrgg&format=png&color=FFFFFF"
+          />
+          <span>{{ profile.first_name|default:base.email }}</span>
+
+          <div class="modern-dropdown" id="profileDropdown">
+            <form method="post" action="{% url 'Logout' %}">
+              {% csrf_token %}
+              <button type="submit">Logout</button>
+            </form>
+          </div>
+        </div>
+        {% endif %} {% if request.GET.msg %}
+        <div
+          id="flashMessage"
+          class="fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded shadow-lg text-white text-sm font-semibold z-50 transition-all duration-500 backdrop-blur-md bg-opacity-80"
+          style="background-color: {% if request.GET.msg == 'success' %}#16a34a{% else %}#dc2626{% endif %};"
+        >
+          {{ request.GET.text }}
+        </div>
+        <script>
+          setTimeout(() => {
+            const msg = document.getElementById("flashMessage");
+            if (msg) msg.style.opacity = "0";
+          }, 4000);
+        </script>
+        {% endif %}
+      </div>
+    </header>
+    <div class="orders-page">
+      <form action="{% url 'filter_orders' %}" method="get">
+        <aside class="filters">
+          <h3>Filters</h3>
+
+          <div class="filter-group">
+            <h4>ORDER STATUS</h4>
+            <label
+              ><input type="checkbox" name="status" value="Shipped" /> On the
+              way</label
+            >
+            <label
+              ><input type="checkbox" name="status" value="Delivered" />
+              Delivered</label
+            >
+            <label
+              ><input type="checkbox" name="status" value="Cancelled" />
+              Cancelled</label
+            >
+            <label
+              ><input type="checkbox" name="status" value="Returned" />
+              Returned</label
+            >
+          </div>
+
+          <div class="filter-group">
+            <h4>ORDER TIME</h4>
+            <label
+              ><input type="checkbox" name="time" value="30days" /> Last 30
+              days</label
+            >
+            <label
+              ><input type="checkbox" name="time" value="2024" /> 2024</label
+            >
+            <label
+              ><input type="checkbox" name="time" value="2023" /> 2023</label
+            >
+            <label
+              ><input type="checkbox" name="time" value="older" /> Older</label
+            >
+          </div>
+
+          <button type="submit" class="mt-4 px-4 py-2 bg-black text-white">
+            Apply Filters
+          </button>
+        </aside>
+      </form>
+
+      <!-- Main Section -->
+      <main class="orders-content">
+        <!-- Search -->
+        <div class="order-search">
+          <input type="text" placeholder="Search your orders here" />
+          <button>Search Orders</button>
+        </div>
+        {% for order in orders %}
+        <a href="{% url 'order_detail' order.checkout.id %}" class="block">
+          <div class="order-card hover:bg-gray-50 transition cursor-pointer">
+            <div class="order-left">
+              <img src="{{order.product.image.url}}" alt="product" />
+              <div>
+                <h4>Order: {{ order.checkout.order_id }}</h4>
+                <!-- <p class="sub">{{ order.quantity }} PCS</p> -->
+              </div>
+            </div>
+
+            <!-- <div class="order-price">₹{{ order.subtotal }}</div> -->
+
+            <div class="order-status">
+              {% if order.checkout.order_status == "Placed" %}
+              <span class="dot-purple"></span>
+              {% elif order.checkout.order_status == "Processing" %}
+              <span class="dot-yellow"></span>
+              {% elif order.checkout.order_status == "Delivered" %}
+              <span class="dot-green"></span>
+              {% endif %}
+
+              <strong>{{ order.checkout.order_status }}</strong>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </main>
+    </div>
+    <script>
+      const trigger = document.getElementById("profileTrigger");
+      const dropdown = document.getElementById("profileDropdown");
+
+      trigger.addEventListener("click", function (e) {
+        e.stopPropagation();
+        dropdown.classList.toggle("active");
+      });
+
+      document.addEventListener("click", function () {
+        dropdown.classList.remove("active");
+      });
+    </script>
+  </body>
+</html>

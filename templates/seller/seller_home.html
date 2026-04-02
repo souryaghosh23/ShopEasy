@@ -1,0 +1,174 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Sell on ShopEasy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+      :root {
+        --primary-color: #302551;
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-50 text-gray-800">
+    <!-- ================= NAVBAR ================= -->
+    <header class="bg-[color:var(--primary-color)] shadow-lg">
+      <div
+        class="max-w-screen-xl mx-auto px-6 py-4 flex items-center justify-between"
+      >
+        <!-- Logo -->
+        <div class="text-white text-2xl font-extrabold tracking-wide">
+          <a href="{% url 'Home' %}">ShopEasy</a>
+        </div>
+
+        <!-- Nav Links -->
+        <div class="hidden md:flex space-x-8 text-white font-medium">
+          <a href="#" class="hover:text-gray-300 transition">Why Sell?</a>
+          <a href="#" class="hover:text-gray-300 transition">Pricing</a>
+          <a href="#" class="hover:text-gray-300 transition">Support</a>
+        </div>
+
+        <!-- CTA -->
+        <a
+          href="{%url 'seller_dashboard'%}"
+          class="bg-white text-[color:var(--primary-color)] px-5 py-2 rounded-lg font-semibold hover:bg-gray-200 transition"
+        >
+          Start Selling
+        </a>
+      </div>
+      {% if messages %} {% for message in messages %}
+      <div
+        id="flashMessage"
+        class="fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded shadow-lg text-white text-sm font-semibold z-50 transition-all duration-500 backdrop-blur-md bg-opacity-80"
+        style="background-color:
+        {% if message.tags == 'success' %}#16a34a
+        {% elif message.tags == 'error' %}#dc2626
+        {% elif message.tags == 'warning' %}#f59e0b
+        {% else %}#2563eb
+        {% endif %};"
+      >
+        {{ message }}
+      </div>
+
+      <script>
+        setTimeout(() => {
+          const msg = document.getElementById("flashMessage");
+          if (msg) msg.style.opacity = "0";
+        }, 4000);
+      </script>
+      {% endfor %} {% endif %}
+    </header>
+
+    <!-- ================= HERO SECTION ================= -->
+    <section
+      class="bg-gradient-to-r from-[#302551] to-[#4b3b85] text-white py-20"
+    >
+      <div
+        class="max-w-screen-xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center"
+      >
+        <!-- Left Content -->
+        <div>
+          <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-6">
+            Sell Smarter. <br />
+            Grow Faster.
+          </h1>
+
+          <p class="text-lg text-gray-200 mb-8">
+            Join thousands of sellers on ShopEasy and scale your business with
+            powerful tools, seamless order management, and real-time analytics.
+          </p>
+
+          <div class="flex space-x-4">
+            <a
+              href="#"
+              class="bg-orange-500 hover:bg-orange-600 px-6 py-3 rounded-lg font-semibold transition"
+            >
+              Create Seller Account
+            </a>
+
+            <a
+              href="#"
+              class="border border-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-[#302551] transition"
+            >
+              Learn More
+            </a>
+          </div>
+        </div>
+
+        <!-- Right Image Placeholder -->
+        <div class="hidden md:block">
+          <img
+            src="{% static 'images/ChatGPT Image Feb 21, 2026, 03_50_39 PM.png' %}"
+            alt="Seller Dashboard"
+            class="w-full rounded-xl shadow-2xl"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FEATURES ================= -->
+    <section class="py-20 bg-white">
+      <div class="max-w-screen-xl mx-auto px-6 text-center">
+        <h2 class="text-3xl font-bold mb-12">Everything You Need to Succeed</h2>
+
+        <div class="grid md:grid-cols-4 gap-8">
+          <div class="p-6 rounded-xl shadow-md hover:shadow-xl transition">
+            <div class="text-4xl mb-4">🛍️</div>
+            <h3 class="font-semibold text-lg mb-2">Create Your Store</h3>
+            <p class="text-gray-600 text-sm">
+              Set up and customize your online shop in minutes.
+            </p>
+          </div>
+
+          <div class="p-6 rounded-xl shadow-md hover:shadow-xl transition">
+            <div class="text-4xl mb-4">📈</div>
+            <h3 class="font-semibold text-lg mb-2">Grow Your Audience</h3>
+            <p class="text-gray-600 text-sm">
+              Access marketing tools to increase visibility.
+            </p>
+          </div>
+
+          <div class="p-6 rounded-xl shadow-md hover:shadow-xl transition">
+            <div class="text-4xl mb-4">📦</div>
+            <h3 class="font-semibold text-lg mb-2">Manage Orders</h3>
+            <p class="text-gray-600 text-sm">
+              Track inventory, shipping, and payments seamlessly.
+            </p>
+          </div>
+
+          <div class="p-6 rounded-xl shadow-md hover:shadow-xl transition">
+            <div class="text-4xl mb-4">💰</div>
+            <h3 class="font-semibold text-lg mb-2">Increase Profits</h3>
+            <p class="text-gray-600 text-sm">
+              Monitor performance with real-time analytics.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= FINAL CTA ================= -->
+    <section
+      class="bg-[color:var(--primary-color)] text-white py-16 text-center"
+    >
+      <h2 class="text-3xl font-bold mb-6">
+        Ready to Start Selling on ShopEasy?
+      </h2>
+
+      <a
+        href="#"
+        class="bg-orange-500 hover:bg-orange-600 px-8 py-4 rounded-lg font-semibold text-lg transition"
+      >
+        Become a Seller Today
+      </a>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="bg-gray-100 py-6 text-center text-sm text-gray-500">
+      © 2026 ShopEasy. All rights reserved.
+    </footer>
+  </body>
+</html>

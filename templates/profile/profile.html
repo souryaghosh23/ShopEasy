@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile | ShopEasy</title>
+
+    <style>
+      :root {
+        --primary: #302551;
+        --bg: #f1f3f6;
+        --card: #ffffff;
+        --muted: #6b7280;
+        --border: #e5e7eb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          Arial;
+        background: var(--bg);
+      }
+
+      /* NAVBAR */
+      .navbar {
+        background: var(--primary);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .nav-inner {
+        max-width: 1280px;
+        margin: auto;
+        padding: 0 24px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .logo {
+        color: white;
+        font-size: 22px;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .user-area {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .user-area img {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+      }
+
+      .dropdown {
+        position: absolute;
+        top: 60px;
+        right: 0;
+        background: white;
+        width: 160px;
+        border-radius: 8px;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+        display: none;
+        padding: 8px 0;
+      }
+
+      .dropdown.active {
+        display: block;
+      }
+
+      .dropdown button {
+        width: 100%;
+        padding: 10px 16px;
+        border: none;
+        background: none;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .dropdown button:hover {
+        background: #f3f4f6;
+      }
+
+      /* LAYOUT */
+      .wrapper {
+        max-width: 1200px;
+        margin: 40px auto;
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        gap: 24px;
+        padding: 0 16px;
+      }
+
+      @media (max-width: 900px) {
+        .wrapper {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* SIDEBAR */
+      .sidebar-card,
+      .sidebar-section {
+        background: var(--card);
+        border-radius: 8px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .sidebar-card {
+        padding: 20px;
+      }
+
+      .sidebar-title {
+        padding: 14px 16px;
+        font-weight: bold;
+        border-bottom: 1px solid var(--border);
+        color: var(--muted);
+      }
+
+      .sidebar-item {
+        padding: 12px 16px;
+        cursor: pointer;
+      }
+
+      .sidebar-item:hover {
+        background: #f5faff;
+      }
+
+      .active {
+        background: #f1f8ff;
+        color: #2874f0;
+        font-weight: 600;
+      }
+
+      .avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #ffd600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+      }
+
+      /* CARDS */
+      .card {
+        background: var(--card);
+        padding: 28px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      .card-header h2 {
+        margin: 0;
+        font-size: 18px;
+      }
+
+      .edit-btn {
+        color: #2874f0;
+        font-size: 14px;
+        cursor: pointer;
+        font-weight: 500;
+      }
+
+      .row {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      .input-box {
+        flex: 1;
+      }
+
+      label {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 6px;
+        color: var(--muted);
+      }
+
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: #fafafa;
+        font-size: 14px;
+        transition: 0.2s;
+      }
+
+      input[readonly],
+      input[disabled] {
+        background: #f3f4f6;
+        cursor: default;
+      }
+
+      input:not([readonly]):focus {
+        outline: none;
+        border-color: var(--primary);
+        background: white;
+      }
+
+      .radio-group {
+        display: flex;
+        gap: 24px;
+        margin-top: 10px;
+      }
+      .sidebar-user {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .avatar {
+        font-size: 16px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #ffd600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        flex-shrink: 0; /* 🔥 prevents squishing */
+      }
+
+      .user-info {
+        min-width: 0; /* prevents text overflow issues */
+      }
+
+      .user-greeting {
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .user-name {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="navbar">
+      {% if messages %} {% for message in messages %}
+      <div
+        id="flashMessage"
+        class="fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded shadow-lg text-white text-sm font-semibold z-50 transition-all duration-500 backdrop-blur-md bg-opacity-80"
+        style="background-color:
+        {% if message.tags == 'success' %}#16a34a
+        {% elif message.tags == 'error' %}#dc2626
+        {% elif message.tags == 'warning' %}#f59e0b
+        {% else %}#2563eb
+        {% endif %};"
+      >
+        {{ message }}
+      </div>
+
+      <script>
+        setTimeout(() => {
+          const msg = document.getElementById("flashMessage");
+          if (msg) msg.style.opacity = "0";
+        }, 4000);
+      </script>
+      {% endfor %} {% endif %}
+      <div class="nav-inner">
+        <a href="{% url 'Home' %}" class="logo">ShopEasy</a>
+
+        {% if user.is_authenticated %}
+        <div class="user-area" id="profileTrigger">
+          <img
+            src="https://img.icons8.com/?size=100&id=AZazdsitsrgg&format=png&color=FFFFFF"
+          />
+          <span>{{ profile.first_name|default:base.email }}</span>
+
+          <div class="dropdown" id="profileDropdown">
+            <form method="post" action="{% url 'Logout' %}">
+              {% csrf_token %}
+              <button type="submit">Logout</button>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </header>
+
+    <div class="wrapper">
+      <aside>
+        <div class="sidebar-card">
+          <div class="sidebar-user">
+            <div class="avatar">
+              {{ profile.first_name|default:base.email|slice:":1"|upper }}
+            </div>
+
+            <div class="user-info">
+              <div class="user-greeting">Hello,</div>
+              <strong class="user-name">
+                {{ profile.first_name|default:base.email }}
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        <a
+          href="{% url 'orders' %}"
+          style="text-decoration: none; color: inherit"
+        >
+          <div class="sidebar-section">
+            <div class="sidebar-title">MY ORDERS</div>
+          </div>
+        </a>
+
+        <div class="sidebar-section">
+          <div class="sidebar-title">ACCOUNT SETTINGS</div>
+          <div class="sidebar-item active">Profile Information</div>
+          <div class="sidebar-item">Manage Addresses</div>
+        </div>
+      </aside>
+
+      <main>
+        <form method="post" id="profile-form">
+          {% csrf_token %}
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Personal Details</h2>
+              <span class="edit-btn" data-editing="false">Edit</span>
+            </div>
+
+            <div class="row">
+              <div class="input-box">
+                <label>First Name</label>
+                <input
+                  type="text"
+                  name="f_name"
+                  value="{{ profile.first_name|default:'' }}"
+                  readonly
+                />
+              </div>
+              <div class="input-box">
+                <label>Last Name</label>
+                <input
+                  type="text"
+                  name="l_name"
+                  value="{{ profile.last_name|default:'' }}"
+                  readonly
+                />
+              </div>
+            </div>
+
+            <label>Gender</label>
+            <div class="radio-group">
+              <label>
+                <input
+                  type="radio"
+                  name="gender"
+                  value="male"
+                  {%
+                  if
+                  profile.gender=""
+                  ="male"
+                  %}checked{%
+                  endif
+                  %}
+                  disabled
+                />
+                Male
+              </label>
+
+              <label>
+                <input
+                  type="radio"
+                  name="gender"
+                  value="female"
+                  {%
+                  if
+                  profile.gender=""
+                  ="female"
+                  %}checked{%
+                  endif
+                  %}
+                  disabled
+                />
+                Female
+              </label>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Contact Information</h2>
+              <span class="edit-btn" data-editing="false">Edit</span>
+            </div>
+
+            <div class="row">
+              <div class="input-box">
+                <label>Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value="{{ base.email }}"
+                  readonly
+                />
+              </div>
+              <div class="input-box">
+                <label>Phone</label>
+                <input
+                  type="text"
+                  name="number"
+                  value="{{ profile.phone_num|default:'' }}"
+                  readonly
+                />
+              </div>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <script>
+      document.querySelectorAll(".edit-btn").forEach((button) => {
+        button.addEventListener("click", function () {
+          const card = button.closest(".card");
+          const inputs = card.querySelectorAll("input");
+          const isEditing = button.dataset.editing === "true";
+
+          if (!isEditing) {
+            inputs.forEach((input) => {
+              if (input.type === "radio") input.disabled = false;
+              else input.readOnly = false;
+            });
+
+            button.textContent = "Save";
+            button.dataset.editing = "true";
+          } else {
+            document.getElementById("profile-form").submit();
+          }
+        });
+      });
+
+      // dropdown
+      const trigger = document.getElementById("profileTrigger");
+      const dropdown = document.getElementById("profileDropdown");
+
+      if (trigger) {
+        trigger.addEventListener("click", function (e) {
+          e.stopPropagation();
+          dropdown.classList.toggle("active");
+        });
+
+        document.addEventListener("click", function () {
+          dropdown.classList.remove("active");
+        });
+      }
+    </script>
+  </body>
+</html>

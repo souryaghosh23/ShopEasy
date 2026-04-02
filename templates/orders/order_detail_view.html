@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order Details</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* ===== CLEAN NAVBAR ===== */
+
+      body {
+        margin: 0;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          "Helvetica Neue",
+          Arial,
+          "Noto Sans",
+          sans-serif;
+      }
+
+      h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #111827;
+      }
+
+      h4 {
+        font-weight: 600;
+      }
+
+      .modern-dropdown button:hover {
+        background: #f3f4f6;
+      }
+
+      .modern-navbar {
+        background-color: #302551;
+        padding: 0;
+      }
+
+      .modern-nav-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .modern-logo {
+        color: white;
+        font-size: 24px; /* text-2xl */
+        font-weight: 800; /* font-extrabold */
+        letter-spacing: 0.05em; /* tracking-wide */
+        text-decoration: none;
+      }
+
+      /* Hover support */
+      .modern-user:hover .modern-dropdown {
+        display: block;
+      }
+
+      .modern-user {
+        position: relative;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+      }
+
+      .modern-user img {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+      }
+
+      .modern-dropdown {
+        position: absolute;
+        top: 60px;
+        right: 0;
+        background: white;
+        color: #333;
+        border-radius: 6px;
+        width: 150px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-5px);
+        transition: all 0.2s ease;
+      }
+
+      .modern-user:hover .modern-dropdown,
+      .modern-dropdown.active {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .modern-dropdown button {
+        width: 100%;
+        padding: 10px 16px;
+        background: none;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-100">
+    <header class="modern-navbar">
+      {% if messages %} {% for message in messages %}
+      <div
+        id="flashMessage"
+        class="fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded shadow-lg text-white text-sm font-semibold z-50 transition-all duration-500 backdrop-blur-md bg-opacity-80"
+        style="background-color:
+        {% if message.tags == 'success' %}#16a34a
+        {% elif message.tags == 'error' %}#dc2626
+        {% elif message.tags == 'warning' %}#f59e0b
+        {% else %}#2563eb
+        {% endif %};"
+      >
+        {{ message }}
+      </div>
+
+      <script>
+        setTimeout(() => {
+          const msg = document.getElementById("flashMessage");
+          if (msg) msg.style.opacity = "0";
+        }, 4000);
+      </script>
+      {% endfor %} {% endif %}
+      <div class="modern-nav-inner">
+        <a href="{% url 'Home' %}" class="modern-logo"> ShopEasy </a>
+
+        {% if user.is_authenticated %}
+        <div class="modern-user" id="profileTrigger">
+          <img
+            src="https://img.icons8.com/?size=100&id=AZazdsitsrgg&format=png&color=FFFFFF"
+          />
+          <span>{{ profile.first_name|default:base.email }}</span>
+
+          <div class="modern-dropdown" id="profileDropdown">
+            <form method="post" action="{% url 'Logout' %}">
+              {% csrf_token %}
+              <button type="submit">Logout</button>
+            </form>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </header>
+    <div class="max-w-7xl mx-auto px-6 py-10">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- LEFT SECTION -->
+        <div class="lg:col-span-2 bg-white rounded-lg p-8 shadow">
+          <!-- Order Status -->
+          {%for o in order%}
+          <div class="text-center">
+            <h4>Order {{o.order_status}}</h4>
+
+            <!-- <h2 class="text-xl font-semibold text-gray-800">
+            Delivered before time!
+          </h2>
+
+          <p class="text-green-600 font-medium mt-2">
+            Arrived in ⚡ 9 minutes
+          </p> -->
+          </div>
+          {%for item in o.items.all%}
+          <!-- Divider -->
+          <hr class="my-6" />
+
+          <!-- Items Summary -->
+          <div class="flex items-center justify-between text-sm text-gray-600">
+            <span>All items</span>
+            <a
+              href="javascript:void(0)"
+              onclick="openItemsModal()"
+              class="text-pink-600 font-medium hover:underline"
+            >
+              See all items
+            </a>
+          </div>
+
+          <!-- Support -->
+          <div class="mt-6 text-center">
+            <button
+              class="inline-flex items-center gap-2 text-pink-600 font-medium hover:underline"
+            >
+              💬 Chat with us
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT SECTION -->
+        <div class="bg-white rounded-lg p-6 shadow space-y-6">
+          <!-- Order Details -->
+          <div>
+            <h3 class="font-semibold text-gray-800 mb-3">Order Details</h3>
+            <div class="text-sm text-gray-600 space-y-1">
+              <p><span class="font-medium">Order ID:</span> {{ o.id }}</p>
+              <p>
+                <span class="font-medium">Order Date:</span> {{ o.created_at }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Delivery Details -->
+          <div>
+            <h3 class="font-semibold text-gray-800 mb-3">Delivery details</h3>
+            <div class="text-sm text-gray-600 space-y-2">
+              <p class="font-medium">🏠 {{ o.address.house_no_or_street }}</p>
+              <p>{{ o.address.landmark }}</p>
+              <p>👤 {{ o.address.name }} | {{ o.address.phone_number }}</p>
+            </div>
+          </div>
+
+          <!-- Price Details -->
+          <div>
+            <h3 class="font-semibold text-gray-800 mb-3">Price details</h3>
+
+            <div class="text-sm text-gray-600 space-y-2">
+              <div class="flex justify-between">
+                <span>Listing price</span>
+                <span class="line-through"
+                  >₹{{ item.product.original_price }}</span
+                >
+              </div>
+
+              <div class="flex justify-between">
+                <span>Selling price</span>
+                <span>₹{{ item.product.discounted_price }}</span>
+              </div>
+
+              <div class="flex justify-between text-green-600">
+                <span>Other discount</span>
+                <span>-₹{{ order.discount }}</span>
+              </div>
+
+              <hr />
+
+              <div class="flex justify-between font-semibold text-gray-800">
+                <span>Total amount</span>
+                <span>₹{{ o.total_amount }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment -->
+          <div>
+            <p class="flex justify-between font-semibold text-gray-800">
+              <span class="font-medium">Payment method:</span>
+              <span>{{ o.payment_method }}</span>
+            </p>
+          </div>
+
+          <!-- Invoice -->
+          <button
+            class="w-full mt-4 border border-gray-300 rounded-lg py-2 font-medium hover:bg-gray-50"
+          >
+            ⬇ Download Invoice
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- ITEMS MODAL -->
+    <div
+      id="itemsModal"
+      class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center"
+    >
+      <!-- Modal Box -->
+      <div class="bg-white w-full max-w-2xl rounded-lg shadow-lg">
+        <!-- Header -->
+        <div class="flex justify-between items-center px-6 py-4 border-b">
+          <h3 class="text-lg font-semibold text-gray-800">Order Items</h3>
+          <button
+            onclick="closeItemsModal()"
+            class="text-gray-500 hover:text-black"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form method="post" action="{% url 'cancel' %}">
+          {% csrf_token %}
+
+          <!-- Items List -->
+          <div class="max-h-[60vh] overflow-y-auto p-6 space-y-4">
+            {% for item in items %}
+            <div
+              class="flex justify-between items-center border rounded-lg p-4"
+            >
+              <div class="flex items-center gap-4">
+                <!-- ✅ Checkbox -->
+                <input
+                  type="checkbox"
+                  name="selected_items[]"
+                  value="{{ item.id }}"
+                  class="item-checkbox"
+                />
+                <input type="hidden" name="checkout_id" value="{{ o.id }}" />
+                <div
+                  class="w-28 h-28 flex items-center justify-center bg-gray-100 rounded-lg overflow-hidden border"
+                >
+                  {% if item.product.image %}
+                  <img
+                    src="{{ item.product.image.url }}"
+                    class="w-full h-full object-contain"
+                    alt="{{ item.product.name }}"
+                  />
+                  {% else %}
+                  <span class="text-xs text-gray-400">No Image</span>
+                  {% endif %}
+                </div>
+
+                <div>
+                  <p class="font-medium text-gray-800">
+                    {{ item.product.name }}
+                  </p>
+                  <p class="text-sm text-gray-500">Qty: {{ item.quantity }}</p>
+                </div>
+              </div>
+
+              <div class="text-right">
+                <p class="text-sm line-through text-gray-400">
+                  ₹{{ item.product.original_price }}
+                </p>
+                <p class="font-semibold text-gray-800">
+                  ₹{{ item.product.discounted_price }}
+                </p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Action Button -->
+          <div class="p-6 border-t">
+            <button
+              type="submit"
+              id="cancel-btn"
+              disabled
+              class="bg-red-500 text-white px-6 py-2 rounded opacity-50 cursor-not-allowed"
+            >
+              Cancel Selected Items
+            </button>
+          </div>
+        </form>
+
+        {%endfor%} {%endfor%}
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t flex justify-end">
+          <button
+            onclick="closeItemsModal()"
+            class="px-4 py-2 bg-gray-800 text-white rounded hover:bg-black"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+    <script>
+      function openItemsModal() {
+        document.getElementById("itemsModal").classList.remove("hidden");
+      }
+
+      function closeItemsModal() {
+        document.getElementById("itemsModal").classList.add("hidden");
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const checkboxes = document.querySelectorAll(".item-checkbox");
+        const cancelBtn = document.getElementById("cancel-btn");
+
+        function toggleButton() {
+          const anyChecked = [...checkboxes].some((cb) => cb.checked);
+          cancelBtn.disabled = !anyChecked;
+          cancelBtn.classList.toggle("opacity-50", !anyChecked);
+          cancelBtn.classList.toggle("cursor-not-allowed", !anyChecked);
+        }
+
+        checkboxes.forEach((cb) => {
+          cb.addEventListener("change", toggleButton);
+        });
+      });
+    </script>
+  </body>
+</html>

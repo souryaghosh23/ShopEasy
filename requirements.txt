@@ -1,0 +1,30 @@
+asgiref==3.11.1
+python-decouple==3.8
+python-dotenv==1.1.0
+dnspython==2.7.0
+Django==5.1.7
+django-axes==8.0.0
+django-cors-headers==4.7.0
+django-ratelimit-backend==2.0
+django-sequences==3.0
+# Database
+
+psycopg2-binary==2.9.11
+
+# Images / Media
+
+pillow==11.2.1
+cloudinary==1.44.1
+
+# Payments
+
+razorpay==1.4.2
+
+# Config / Env
+
+python-decouple==3.8
+python-dotenv==1.1.0
+
+# Utilities
+
+requests==2.32.3

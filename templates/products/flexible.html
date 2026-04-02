@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+
+<head>
+    <meta charset="UTF-8" />
+    <title>ShopEase | Products</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary-color: #302551;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .overlay-blur {
+          backdrop-filter: blur(4px);
+        }
+
+        .cart-drawer {
+          transition: transform 0.3s ease-in-out;
+          transform: translateX(100%);
+        }
+
+        .cart-drawer.active {
+          transform: translateX(0);
+        }
+
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .scroll-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: 0.4rem;
+            border-radius: 9999px;
+            z-index: 10;
+        }
+
+        .category-item:hover {
+            transform: scale(1.05);
+            filter: brightness(1.15);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 font-sans">
+  {% if messages %}
+  {% for message in messages %}
+    <div
+      id="flashMessage"
+      class="fixed top-4 left-1/2 transform -translate-x-1/2 px-6 py-3 rounded shadow-lg text-white text-sm font-semibold z-50 transition-all duration-500 backdrop-blur-md bg-opacity-80"
+      style="background-color:
+        {% if message.tags == 'success' %}#16a34a
+        {% elif message.tags == 'error' %}#dc2626
+        {% elif message.tags == 'warning' %}#f59e0b
+        {% else %}#2563eb
+        {% endif %};"
+    >
+      {{ message }}
+    </div>
+
+    <script>
+      setTimeout(() => {
+        const msg = document.getElementById("flashMessage");
+        if (msg) msg.style.opacity = "0";
+      }, 4000);
+    </script>
+  {% endfor %}
+{% endif %}
+    <input type="hidden" id="csrfToken" value="{{ csrf_token }}" />
+
+    <!-- BACKDROP OVERLAY -->
+    <div
+      id="overlay"
+      class="fixed inset-0 bg-black bg-opacity-40 z-30 hidden overlay-blur"
+      onclick="toggleCart()"
+    ></div>
+
+    <!-- SLIDING CART DRAWER -->
+    <div
+      id="cartDrawer"
+      class="fixed top-0 right-0 w-full sm:w-96 h-full bg-white shadow-lg z-40 cart-drawer overflow-y-auto"
+    >
+      <div class="p-6 space-y-4">
+        <h2 class="text-xl font-bold text-[color:var(--primary-color)]">
+          Your Cart
+        </h2>
+
+        <!-- ✅ Message box -->
+        <div
+          id="cartMessage"
+          class="text-green-600 text-sm font-medium hidden"
+        ></div>
+
+        <!-- Inside Cart Items Loop -->
+        {% for item in cart_items %}
+        <div
+          class="relative border p-3 rounded-lg shadow-sm flex items-center gap-4"
+        >
+          <!-- Image -->
+          <img
+            src="{{ item.product.image.url }}"
+            alt="{{ item.product.name }}"
+            class="w-16 h-16 rounded object-cover"
+          />
+
+          <!-- Name + Qty -->
+          <div class="flex-1">
+            <div class="text-sm font-semibold text-gray-800">
+              {{ item.product.name }}
+            </div>
+
+            <!-- ✅ Quantity Selector -->
+            <div class="flex items-center mt-2 space-x-2">
+              <button
+                class="bg-gray-200 w-6 h-6 rounded text-center font-bold text-sm"
+                onclick="updateQuantity('{{ item.product.id }}', 'decrease')"
+              >
+                −
+              </button>
+              <div
+                class="w-8 text-center text-sm"
+                data-qty="{{ item.product.id }}"
+              >
+                {{ item.quantity }}
+              </div>
+              <button
+                class="bg-gray-200 w-6 h-6 rounded text-center font-bold text-sm"
+                onclick="updateQuantity('{{ item.product.id }}', 'increase')"
+              >
+                +
+              </button>
+            </div>
+          </div>
+
+          <!-- Subtotal -->
+          <div
+            class="text-right text-sm font-semibold text-gray-700"
+            data-subtotal="{{ item.product.id }}"
+          >
+            ₹{{ item.sub_total }}
+          </div>
+
+          <!-- Close Icon (optional) -->
+          <button
+            class="absolute top-1 right-1 text-gray-400 hover:text-red-500"
+            onclick="removeItem('{{ item.product.id }}', 'remove')"
+          >
+            &times;
+          </button>
+        </div>
+        {% empty %}
+        <p class="text-gray-500 text-sm mt-4">Its looks empty here, fill your cart up !!!!!!!!!</p>
+        {% endfor %}
+
+        <!-- Coupon -->
+        <div class="mt-4">
+          <!-- Toggle coupon input -->
+          <div
+            onclick="toggleCouponInput()"
+            class="flex items-center text-sm text-gray-600 space-x-2 mb-2 cursor-pointer"
+          >
+            <img
+              src="https://cdn-icons-png.flaticon.com/128/10704/10704212.png"
+              class="w-4 h-4"
+            />
+            <span class="font-semibold">Apply Coupon</span>
+          </div>
+
+          <!-- Coupon input with apply button -->
+          <div id="couponInput" class="hidden">
+            <div class="flex items-center">
+              <input
+                id="couponCode"
+                type="text"
+                placeholder="Enter code"
+                class="w-full px-3 py-2 border rounded-l-md text-sm focus:ring focus:ring-indigo-200"
+              />
+              <button
+                onclick="applyCoupon()"
+                class="bg-[color:#259605] text-white px-4 py-2 text-sm font-semibold rounded-r-md hover:brightness-110 transition"
+              >
+                Apply
+              </button>
+            </div>
+            <div
+              id="couponMessage"
+              class="text-xs mt-1 text-green-600 hidden"
+            ></div>
+          </div>
+        </div>
+
+        <!-- Checkout -->
+        {%if cart_items%}
+        <div class="mt-6">
+          <a href="{% url 'Checkout_Data' %}">
+            <button
+              class="w-full bg-[color:var(--primary-color)] text-white py-2 rounded hover:brightness-110 font-semibold"
+            >
+              Checkout
+            </button>
+          </a>
+        </div>
+        {%endif%}
+      </div>
+    </div>
+
+    <!-- HEADER -->
+    <header class="bg-[color:var(--primary-color)] shadow-lg py-4">
+      <div
+        class="max-w-screen-xl mx-auto px-4 flex items-center justify-between space-x-6"
+      >
+        <div
+          class="text-white text-2xl font-extrabold tracking-wide whitespace-nowrap"
+        >
+          <a href="{% url 'Home' %}">ShopEasy</a>
+        </div>
+        <div class="relative flex-1 min-w-0">
+          <span class="absolute left-3 top-2.5 opacity-60">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/622/622669.png"
+              class="w-5 h-5"
+              alt="Search"
+            />
+          </span>
+          <input
+            type="text"
+            placeholder="Search for products, brands and more"
+            class="w-full pl-10 pr-12 py-2 rounded-lg border border-gray-300 shadow-sm focus:ring-2 focus:ring-blue-300 focus:outline-none"
+          />
+        </div>
+        <div class="flex items-center space-x-6 text-white text-sm">
+          {% if user.is_authenticated %}
+          <div class="relative group" tabindex="0">
+            <!-- Trigger -->
+            <div class="flex items-center space-x-2 cursor-pointer">
+              <img
+                src="https://img.icons8.com/?size=100&id=AZazdsitsrgg&format=png&color=FFFFFF"
+                class="w-7 h-7"
+              />
+              <span>{{ profile.first_name|default:base.email }}</span>
+            </div>
+
+            <!-- Dropdown -->
+            <div
+              class="absolute right-0 mt-2 w-40 bg-white text-gray-800 rounded shadow-lg z-50
+         opacity-0 invisible
+         group-hover:opacity-100 group-hover:visible
+         group-focus-within:opacity-100 group-focus-within:visible
+         transition-opacity duration-20"
+            >
+              <a
+                href="{% url 'profile' %}"
+                class="block px-4 py-2 hover:bg-gray-100"
+              >
+                Profile
+              </a>
+
+              <form method="post" action="{% url 'Logout' %}">
+                {% csrf_token %}
+                <button
+                  type="submit"
+                  class="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                >
+                  Logout
+                </button>
+              </form>
+            </div>
+          </div>
+         {% else %}
+          <a
+            href="{% url 'Login' %}"
+            class="flex items-center space-x-2 hover:underline"
+          >
+            <img
+              src="https://img.icons8.com/?size=100&id=AZazdsitsrgg&format=png&color=FFFFFF"
+              class="w-7 h-7"
+            />
+            <span>Login</span>
+          </a>
+          {% endif %}
+
+          <a
+            href="{%url 'seller' %}"
+            class="flex items-center space-x-2 hover:underline"
+          >            <img
+              src="https://img.icons8.com/?size=100&id=81062&format=png&color=000000"
+              class="w-7 h-7"
+            />
+            <span>Seller</span>
+          </a>
+           <button
+            onclick="toggleCart()"
+            class="flex items-center space-x-2 hover:underline"
+          >
+            <img
+              src="https://img.icons8.com/?size=100&id=RvtyS77Ngor1&format=png&color=000000"
+              class="w-7 h-7"
+            />
+            <span>Cart</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- PRODUCTS BODY GOES HERE -->
+    <section class="max-w-screen-xl mx-auto px-4 py-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">All Products</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {% for product in products %}
+          <div class="bg-white p-4 rounded shadow relative
+              {% if product.inventory == 0 %}
+                  opacity-60
+              {% else %}
+                  hover:scale-[1.02] hover:shadow-xl transition duration-200
+              {% endif %}
+          ">
+
+              {% if product.inventory == 0 %}
+                  <!-- SOLD OUT OVERLAY -->
+                  <div class="absolute inset-0 bg-black bg-opacity-40 
+                              flex items-center justify-center rounded z-10">
+                      <span class="bg-red-600 text-white px-4 py-1 rounded font-semibold text-sm">
+                          Sold Out
+                      </span>
+                  </div>
+              {% endif %}
+
+              {% if product.inventory > 0 %}
+                  <a href="{% url 'Products_Detail' product.id %}">
+              {% endif %}
+
+                  {% if product.image %}
+                      <img src="{{ product.image.url }}"
+                          class="h-32 object-contain mx-auto"
+                          alt="{{ product.name }}" />
+                  {% else %}
+                      <img src="#"
+                          class="h-32 object-contain mx-auto"
+                          alt="{{ product.name }}" />
+                  {% endif %}
+
+              {% if product.inventory > 0 %}
+                  </a>
+              {% endif %}
+
+              <h3 class="mt-2 text-sm text-gray-700 font-medium truncate">
+                  {{ product.name }}
+              </h3>
+
+              <div class="flex items-baseline space-x-2 mt-1">
+                  <span class="text-lg font-bold text-gray-900">
+                      ₹{{ product.discounted_price }}
+                  </span>
+                  <span class="text-sm line-through text-gray-500">
+                      ₹{{ product.original_price }}
+                  </span>
+                  <span class="text-sm text-gray-500">
+                      {{ product.reviews }}
+                  </span>
+              </div>
+          </div>
+          {% endfor %}
+        </div>
+    </section>
+
+
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-[color:var(--primary-color)] text-white text-sm py-10 mt-10">
+        <div class="max-w-screen-xl mx-auto px-4 grid grid-cols-2 sm:grid-cols-4 gap-6">
+            <div>
+                <h3 class="font-semibold mb-2">ABOUT</h3>
+                <ul>
+                    <li><a href="#" class="hover:underline">Contact Us</a></li>
+                    <li><a href="#" class="hover:underline">About Us</a></li>
+                    <li><a href="#" class="hover:underline">Careers</a></li>
+                    <li><a href="#" class="hover:underline">ShopEase Stories</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="font-semibold mb-2">HELP</h3>
+                <ul>
+                    <li><a href="#" class="hover:underline">Payments</a></li>
+                    <li><a href="#" class="hover:underline">Shipping</a></li>
+                    <li><a href="#" class="hover:underline">Cancellation</a></li>
+                    <li><a href="#" class="hover:underline">Returns</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="font-semibold mb-2">POLICY</h3>
+                <ul>
+                    <li><a href="#" class="hover:underline">Return Policy</a></li>
+                    <li><a href="#" class="hover:underline">Terms Of Use</a></li>
+                    <li><a href="#" class="hover:underline">Security</a></li>
+                    <li><a href="#" class="hover:underline">Privacy</a></li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="font-semibold mb-2">SOCIAL</h3>
+                <ul>
+                    <li><a href="#" class="hover:underline">Facebook</a></li>
+                    <li><a href="#" class="hover:underline">Twitter</a></li>
+                    <li><a href="#" class="hover:underline">YouTube</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="text-center mt-6">© 2026 ShopEase. All rights reserved.</div>
+    </footer>
+    <script>
+      function toggleCart() {
+        const drawer = document.getElementById("cartDrawer");
+        const overlay = document.getElementById("overlay");
+        drawer.classList.toggle("active");
+        overlay.classList.toggle("hidden");
+      }
+      function toggleCouponInput() {
+        const couponInput = document.getElementById("couponInput");
+        couponInput.classList.toggle("hidden");
+      }
+
+      // ✅ Dynamically update quantity and subtotal
+      function updateQuantity(productId, action) {
+        fetch("{% url 'UpdateCart' %}", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: `product_id=${productId}&action=${action}`,
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.status === "ok") {
+              if (data.deleted) {
+                const cartItem = document
+                  .querySelector(`[data-qty="${productId}"]`)
+                  ?.closest(".relative");
+                if (cartItem) cartItem.remove();
+                showCartMessage("Item removed successfully");
+              } else {
+                const qtyElem = document.querySelector(
+                  `[data-qty="${productId}"]`,
+                );
+                const subtotalElem = document.querySelector(
+                  `[data-subtotal="${productId}"]`,
+                );
+                if (qtyElem) qtyElem.innerText = data.quantity;
+                if (subtotalElem) subtotalElem.innerText = `₹${data.subtotal}`;
+              }
+            }
+          });
+      }
+
+      function removeItem(productId) {
+        fetch("{% url 'RemoveCart' %}", {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: `product_id=${productId}&action=remove`,
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.status === "ok") {
+              const cartItem = document
+                .querySelector(`[data-qty="${productId}"]`)
+                ?.closest(".relative");
+              if (cartItem) cartItem.remove();
+              showCartMessage("Item removed successfully");
+            }
+          });
+      }
+
+      function showCartMessage(text) {
+        const msgBox = document.getElementById("cartMessage");
+        msgBox.innerText = text;
+        msgBox.classList.remove("hidden");
+
+        setTimeout(() => {
+          msgBox.classList.add("hidden");
+          msgBox.innerText = "";
+        }, 3000); // hide after 3 seconds
+      }
+
+      // ✅ Open cart drawer automatically if session flag is set
+      document.addEventListener("DOMContentLoaded", function () {
+        const openCart = "{{ open_cart|yesno:'true,false' }}";
+        if (openCart === "true") {
+          document.getElementById("cartDrawer")?.classList.add("active");
+          document.getElementById("overlay")?.classList.remove("hidden");
+        }
+      });
+</script>
+</body>
+</html>
